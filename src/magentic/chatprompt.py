@@ -9,6 +9,7 @@ from typing import (
     Protocol,
     Sequence,
     TypeVar,
+    Union,
     cast,
     overload,
 )
@@ -129,68 +130,30 @@ def chatprompt(
     functions: list[Callable[..., Any]] | None = None,
     stop: list[str] | None = None,
     model: ChatModel | None = None,
-) -> ChatPromptDecorator:
-    """Convert a function into an LLM chat prompt template.
-
-    The `@chatprompt` decorator allows you to define a prompt template for a chat-based Large Language Model (LLM).
-
-    Examples
-    --------
-    >>> from magentic import chatprompt, AssistantMessage, SystemMessage, UserMessage
-    >>>
-    >>> from pydantic import BaseModel
-    >>>
-    >>>
-    >>> class Quote(BaseModel):
-    >>>     quote: str
-    >>>     character: str
-    >>>
-    >>>
-    >>> @chatprompt(
-    >>>     SystemMessage("You are a movie buff."),
-    >>>     UserMessage("What is your favorite quote from Harry Potter?"),
-    >>>     AssistantMessage(
-    >>>         Quote(
-    >>>             quote="It does not do to dwell on dreams and forget to live.",
-    >>>             character="Albus Dumbledore",
-    >>>         )
-    >>>     ),
-    >>>     UserMessage("What is your favorite quote from {movie}?"),
-    >>> )
-    >>> def get_movie_quote(movie: str) -> Quote: ...
-    >>>
-    >>>
-    >>> get_movie_quote("Iron Man")
-    Quote(quote='I am Iron Man.', character='Tony Stark')
-    """
+) -> "ChatPromptDecorator":
+    """Convert a function into an LLM chat prompt template."""
 
     def decorator(
         func: Callable[P, Awaitable[R]] | Callable[P, R],
-    ) -> AsyncChatPromptFunction[P, R] | ChatPromptFunction[P, R]:
+    ) -> Union[AsyncChatPromptFunction[P, R], ChatPromptFunction[P, R]]:
         func_signature = inspect.signature(func)
+        params = {
+            "messages": messages,
+            "parameters": list(func_signature.parameters.values()),
+            "return_type": func_signature.return_annotation,
+            "functions": functions,
+            "stop": stop,
+            "model": model,
+        }
 
         if inspect.iscoroutinefunction(func):
-            async_prompt_function = AsyncChatPromptFunction[P, R](
-                messages=messages,
-                parameters=list(func_signature.parameters.values()),
-                return_type=func_signature.return_annotation,
-                functions=functions,
-                stop=stop,
-                model=model,
-            )
+            async_prompt_function = AsyncChatPromptFunction(**params)
             return cast(
                 AsyncChatPromptFunction[P, R],
                 update_wrapper(async_prompt_function, func),
             )
 
-        prompt_function = ChatPromptFunction[P, R](
-            messages=messages,
-            parameters=list(func_signature.parameters.values()),
-            return_type=func_signature.return_annotation,
-            functions=functions,
-            stop=stop,
-            model=model,
-        )
+        prompt_function = ChatPromptFunction(**params)
         return cast(ChatPromptFunction[P, R], update_wrapper(prompt_function, func))
 
     return cast(ChatPromptDecorator, decorator)
