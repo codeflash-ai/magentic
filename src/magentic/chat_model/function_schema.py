@@ -3,7 +3,7 @@ import typing
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterable, Callable, Iterable
 from functools import singledispatch
-from typing import Any, Generic, TypeVar, cast, get_args, get_origin
+from typing import Any, Dict, Generic, Optional, TypeVar, cast, get_args, get_origin
 
 from openai.types.shared_params import FunctionDefinition
 from pydantic import BaseModel, TypeAdapter, create_model
@@ -31,18 +31,18 @@ class BaseFunctionSchema(ABC, Generic[T]):
 
         Must be a-z, A-Z, 0-9, or contain underscores and dashes, with a maximum length of 64.
         """
-        ...
+        pass
 
     @property
-    def description(self) -> str | None:
+    def description(self) -> Optional[str]:
         """A description of what the function does."""
         return None
 
     @property
     @abstractmethod
-    def parameters(self) -> dict[str, Any]:
+    def parameters(self) -> Dict[str, Any]:
         """The parameters the functions accepts as a JSON Schema object."""
-        ...
+        pass
 
     def dict(self) -> FunctionDefinition:
         schema: FunctionDefinition = {"name": self.name, "parameters": self.parameters}
