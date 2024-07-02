@@ -44,7 +44,10 @@ def is_any_origin_subclass(
     types: Iterable[type], cls_or_tuple: TypeT | tuple[TypeT, ...]
 ) -> bool:
     """Check if any of the unsubscripted types is a subclass of the given class(es)."""
-    return any(is_origin_subclass(type_, cls_or_tuple) for type_ in types)
+    for type_ in types:
+        if is_origin_subclass(type_, cls_or_tuple):
+            return True
+    return False
 
 
 def name_type(type_: type) -> str:
