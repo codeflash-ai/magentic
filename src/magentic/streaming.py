@@ -3,7 +3,7 @@ import textwrap
 from collections.abc import AsyncIterable, Iterable
 from dataclasses import dataclass
 from itertools import chain, dropwhile
-from typing import AsyncIterator, Callable, Iterator, TypeVar
+from typing import AsyncIterator, Callable, Iterable, Iterator, TypeVar
 
 T = TypeVar("T")
 
@@ -235,6 +235,12 @@ class StreamedStr(Iterable[str]):
             if current_length > length:
                 break
         return textwrap.shorten("".join(chunks), width=length)
+
+    def __init__(self, chunks: Iterable[str]):
+        self._chunks = list(chunks)
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._chunks)
 
 
 class AsyncStreamedStr(AsyncIterable[str]):
