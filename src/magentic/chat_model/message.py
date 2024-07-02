@@ -69,7 +69,7 @@ class SystemMessage(Message[str]):
     """A message to the LLM to guide the whole chat."""
 
     def format(self, **kwargs: Any) -> "SystemMessage":
-        return SystemMessage(self.content.format(**kwargs))
+        return SystemMessage(self._content.format(**kwargs))
 
 
 class UserMessage(Message[str]):
