@@ -156,27 +156,32 @@ def _add_missing_tool_calls_responses(
     This is required by OpenAI's API.
     "An assistant message with 'tool_calls' must be followed by tool messages responding to each 'tool_call_id'."
     """
-    new_messages: list[ChatCompletionMessageParam] = []
-    current_tool_call_responses: set[str] = set()
+
+    # Accumulated tool call IDs that have responses
+    current_tool_call_responses = set()
+    new_messages = []
+
     for message in reversed(messages):
-        if tool_call_id := message.get("tool_call_id"):
-            current_tool_call_responses.add(tool_call_id)  # type: ignore[arg-type]
-        elif tool_calls := message.get("tool_calls"):
-            for tool_call in tool_calls:  # type: ignore[attr-defined]
-                if tool_call["id"] not in current_tool_call_responses:
+        if "tool_call_id" in message:
+            current_tool_call_responses.add(message["tool_call_id"])
+        elif "tool_calls" in message:
+            for tool_call in message["tool_calls"]:
+                tool_call_id = tool_call["id"]
+                if tool_call_id not in current_tool_call_responses:
                     new_messages.append(
                         {
                             "role": OpenaiMessageRole.TOOL.value,
-                            "tool_call_id": tool_call["id"],
+                            "tool_call_id": tool_call_id,
                             "content": "null",
                         }
                     )
-                    current_tool_call_responses.add(tool_call["id"])
-            current_tool_call_responses = set()
+                    current_tool_call_responses.add(tool_call_id)
+            current_tool_call_responses.clear()
 
         new_messages.append(message)
 
-    return list(reversed(new_messages))
+    new_messages.reverse()
+    return new_messages
 
 
 T = TypeVar("T")
