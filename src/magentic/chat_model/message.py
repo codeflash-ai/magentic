@@ -76,7 +76,7 @@ class UserMessage(Message[str]):
     """A message sent by a user to an LLM chat model."""
 
     def format(self, **kwargs: Any) -> "UserMessage":
-        return UserMessage(self.content.format(**kwargs))
+        return UserMessage(self._content.format(**kwargs))
 
 
 class Usage(NamedTuple):
